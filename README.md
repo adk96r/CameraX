@@ -131,12 +131,67 @@ Even thought this pipelines architecture is very clear and tweak-able, using cam
 
 ### <a name="CamXWorking">Using CameraX</a>:
 
+__1. Create a CameraX instance__
 
-#### Footnotes
+Constructor needs the current activity for context, a name for the camera instance and an integer specifying which camera will be used by the object. (Front/Back which is stored as a constant in the CameraX class)
+```java
+// Inside an AppCompatActivity Subclass
+CameraX camera = new CameraX(this, "Camera-Name", CameraX.CAMERA_BACK);
+```
+ - Instance Name is used for debugging purposes and is included in the debug log messages.
+
+__2. Set the output surfaces__
+
+Provide a _List of Objects_ that store the outputs surfaces ( either SurfaceViews or TextureViews ). _Camera2 API requires conversion of the output screens into surfaces but CameraX does it for you_.
+
+```java
+SurfaceView s = (SurfaceView) findViewById(R.id.surfaceView);
+TextureView t = (TextureView) findViewById(R.id.textureView);
+
+List<Object> surfaces = new ArrayList<>(2);
+surfaces.add(s);
+surfaces.add(t);
+
+// Pass this list to the cameraX instance.
+cameraX.setOutputSurfaces(surfaces);
+```
+
+__3. Create a live preview__  
+
+To create a live preview, the only thing you need to do is call _startLivePreview_!
+- You can pass a _CameraCaptureSession.CaptureCallback_ to _startLivePreview_ in case you want to use the output feed from the camera during the preview.
+
+```java
+// Defualt capture callback automatically provided.
+cameraX.startLivePreview(null);
+
+cameraX.pauseLivePreview(null);
+// Do something
+cameraX.resumeLivePreview(null);
+
+cameraX.stopLivePreview(null);
+```
+- As shown above, you can pause, resume and stop the preview with simple calls.
+
+### Thoughts ...
+- Currently CameraX is in its infancy. New features will be added over time.
+- Definitely easier to use that Camera2 ( for simple applications that use the camera )
+- Not the most efficient but will definitely get better over time.
+
+### To add
+Currently only live preview is supported but in future the following will be added. Feel free to contribute your own features! I'd love to see them.
+ - Picture Capture
+ - Video Capture
+ - Burst Shots
+ - Full control over camera
+ 
+### Footnotes
 1. <a name="CameraCaptureRequest">Make sure to create the capture request only after opening the camera device, as opening may take time.</a>
-License
-
-----
-
-MIT
-
+  
+    
+    
+Gooood day! 🍰🍰🍰
+  
+    
+    
+License [CC-BY](https://creativecommons.org/licenses/by/3.0/)
