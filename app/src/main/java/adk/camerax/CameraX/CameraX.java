@@ -26,6 +26,7 @@ import android.view.TextureView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Adu on 11/8/2017.
@@ -48,11 +49,14 @@ public class CameraX {
     private List<Surface> surfaces;
     private String instanceName;
     private int cameraMode;
+    private Map<CaptureRequest.Key, Integer> captureRequestOptions;
+
     private Drawable back;
 
     private CameraCaptureSession.CaptureCallback livePreviewCaptureCallback;
 
     public CameraX(Activity activity, String instanceName, int cameraMode) {
+
 
         this.activity = activity;
         this.context = activity.getApplicationContext();
@@ -64,6 +68,7 @@ public class CameraX {
         try {
             cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
             cameraDevice = null;
+            this.captureRequestOptions = null;
             cameraMode = CAMERA_BACK;
         } catch (Exception e) {
             // Couldnt' get the camera service.
@@ -165,6 +170,10 @@ public class CameraX {
 
         // Create a builder for the given template.
         CaptureRequest.Builder builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+
+        // Set any options if provided.
+        for (CaptureRequest.Key key : captureRequestOptions.keySet())
+            builder.set(key, captureRequestOptions.get(key));
 
         // Add targets to the builder.
         for (Surface surface : surfaces)
@@ -278,6 +287,12 @@ public class CameraX {
         };
 
         return callback;
+    }
+
+
+    // Set Capture request options ( eg- enable face detection )
+    public void setCaptureRequestOptions(Map<CaptureRequest.Key, Integer> captureRequestOptions) {
+        this.captureRequestOptions = captureRequestOptions;
     }
 
     // Start the live preview.
