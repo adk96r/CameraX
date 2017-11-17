@@ -1,4 +1,4 @@
-package adk.camerax.CameraX;
+package adk.giteye;
 
 import android.Manifest;
 import android.app.Activity;
@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.drawable.Drawable;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -16,10 +17,12 @@ import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -37,7 +40,8 @@ public class CameraX {
     // Camera Modes
     public static final int CAMERA_BACK = CameraCharacteristics.LENS_FACING_BACK;
     public static final int CAMERA_FRONT = CameraCharacteristics.LENS_FACING_FRONT;
-    private final String debugTag;
+    private String debugTag;
+    private String cameraId;
     private boolean debug = false;
     private Activity activity;
     private Context context;
@@ -57,25 +61,27 @@ public class CameraX {
 
     public CameraX(Activity activity, String instanceName, int cameraMode) {
 
-
         this.activity = activity;
         this.context = activity.getApplicationContext();
 
         this.instanceName = instanceName;
         this.debugTag = "CameraX : " + instanceName;
-        this.cameraMode = cameraMode;
 
         try {
             cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
             cameraDevice = null;
             this.captureRequestOptions = null;
-            cameraMode = CAMERA_BACK;
+            this.cameraMode = cameraMode;
+            this.cameraId = getCameraDeviceId(cameraMode);
         } catch (Exception e) {
             // Couldnt' get the camera service.
         }
 
-
     }
+
+    /**************
+     * FUNDAMENTALS
+     *******************/
 
     private String getCameraDeviceId(int cameraMode) throws CameraAccessException {
 
@@ -99,9 +105,6 @@ public class CameraX {
             Log.d(debugTag, "No permissions granted to use the camera.");
             return;
         }
-
-        // Get the camera ID.
-        String cameraId = getCameraDeviceId(cameraMode);
 
         // Open the camera device.
         try {
@@ -159,11 +162,6 @@ public class CameraX {
         if (debug)
             Log.d("CameraX_" + instanceName, "Output surfaces set.");
 
-    }
-
-    // Enable/Disable Debug
-    public void debugOn(boolean debug) {
-        this.debug = debug;
     }
 
     private CaptureRequest getCaptureRequest(CameraDevice cameraDevice, int requestTemplate) throws CameraAccessException {
@@ -290,12 +288,49 @@ public class CameraX {
     }
 
 
+    /**************
+     * PERSONALISATION
+     ****************/
+
+    // Enable/Disable Debug
+    public void debugOn(boolean debug) {
+        this.debug = debug;
+    }
+
+
     // Set Capture request options ( eg- enable face detection )
     public void setCaptureRequestOptions(Map<CaptureRequest.Key, Integer> captureRequestOptions) {
         this.captureRequestOptions = captureRequestOptions;
     }
 
-    // Start the live preview.
+    // Return maximum output size for JPEG
+    public Size getMaxOutputSize(@Nullable Integer imageFormat) {
+
+        if (cameraManager == null) {
+            return new Size(0, 0);
+        }
+
+        if (imageFormat == null) {
+            imageFormat = ImageFormat.JPEG;
+        }
+
+        try {
+            StreamConfigurationMap map = cameraManager.getCameraCharacteristics(this.cameraId)
+                    .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            Size[] sizes = map.getOutputSizes(imageFormat);
+            return sizes[0];    // Max
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+            return new Size(0, 0);
+        }
+
+    }
+
+
+    /***************
+     * OPERATIONS
+     *****************/
+
     public void startLivePreview(@Nullable final CameraCaptureSession.CaptureCallback captureCallback) throws CameraAccessException {
 
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -316,7 +351,6 @@ public class CameraX {
 
     }
 
-    //
     public void pauseLivePreview() throws CameraAccessException {
         captureSession.stopRepeating();
     }
@@ -326,7 +360,6 @@ public class CameraX {
         captureSession.setRepeatingRequest(getCaptureRequest(cameraDevice, CameraDevice.TEMPLATE_PREVIEW), livePreviewCaptureCallback, null);
     }
 
-    // Stop the live preview.
     public void stopLivePreview() throws CameraAccessException {
 
         // Stop any existing repeating requests in the live preview.
