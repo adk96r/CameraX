@@ -40,6 +40,7 @@ public class CameraX {
     // Camera Modes
     public static final int CAMERA_BACK = CameraCharacteristics.LENS_FACING_BACK;
     public static final int CAMERA_FRONT = CameraCharacteristics.LENS_FACING_FRONT;
+
     private String debugTag;
     private String cameraId;
     private boolean debug = false;
@@ -327,9 +328,9 @@ public class CameraX {
     }
 
 
-    /***************
+    /**
      * OPERATIONS
-     *****************/
+     */
 
     public void startLivePreview(@Nullable final CameraCaptureSession.CaptureCallback captureCallback) throws CameraAccessException {
 
